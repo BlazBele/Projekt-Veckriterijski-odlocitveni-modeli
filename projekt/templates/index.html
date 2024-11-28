@@ -1,0 +1,40 @@
+{% extends 'base.html' %} 
+
+{% block title %}Seznam podjetij{% endblock %}  <!-- Spremeni naslov strani -->
+
+{% block content %}
+    <h2 class="mb-4">Seznam podjetij</h2>
+    <table class="table table-striped table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Podjetje</th>
+                <th>Prihodek</th>
+                <th>Sprememba prihodka</th>
+                <th>Dobiček</th>
+                <th>Sprememba dobička</th>
+                <th>Sredstva</th>
+                <th>Zaposleni</th>
+                <th>Rang države</th>
+                <th>Leta na seznamu</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for company in companies %}
+            <tr>
+                <td>{{ company[0] }}</td> 
+                <td>{{ company[1] }}</td> 
+                <td>{{ company[2] }}</td> 
+                <td>{{ company[3] }}</td> 
+                <td>{{ company[4] }}</td> 
+                <td>{{ company[5] }}</td> 
+                <td>{{ company[6] }}</td> 
+                <td>{{ company[7] }}</td> 
+                <td>{{ company[8] }}</td> 
+                <td>{{ company[9] }}</td> 
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+

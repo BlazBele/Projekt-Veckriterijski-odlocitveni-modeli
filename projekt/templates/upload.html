@@ -1,0 +1,44 @@
+{% extends 'base.html' %} 
+{% block content %}
+<div class="container mt-5">
+    <h1>Nalaganje podatkov</h1>
+    <p>Vnesite URL Fortune500 strani, da pridobite podatke.</p>
+    <input type="text" id="urlInput" class="form-control mb-3" value ="https://fortune.com/ranking/global500/search/" placeholder="Vnesite poln URL">
+    <button class="btn btn-primary" onclick="scrapeData()">Scrape</button>
+
+    <!-- Modal za prikaz rezultatov -->
+    <div class="modal fade" id="resultModal" tabindex="-1" aria-labelledby="resultModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultModalLabel">Rezultat scrapanja</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="resultMessage"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zapri</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function scrapeData() {
+        const url = document.getElementById("urlInput").value;
+        const response = await fetch("/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: url })
+        });
+        const result = await response.json();
+        
+        // Prikaz rezultatov v modalu
+        document.getElementById("resultMessage").innerText = result.message;
+        const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+        resultModal.show();
+    }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}AHP Analiza{% endblock %}
+
+{% block content %}
+<h1>AHP Analiza</h1>
+<br>
+
+<!-- Korak 1: Izbira podjetij -->
+{% if data == 'selection' %}
+    <form method="POST">
+        <input type="hidden" name="data" value="weights">
+        <h2>Izberite podjetja za analizo</h2>
+        <table class="table table-striped table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th><input type="checkbox" id="select_all"> Izbira</th>
+                    <th>Podjetje</th>
+                    <th>Prihodek</th>
+                    <th>Dobiček</th>
+                    <th>Sredstva</th>
+                    <th>Zaposleni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for company in companies %}
+                <tr>
+                    <td><input type="checkbox" class="company-checkbox" name="selected_companies" value="{{ company['uvoz'] }}"></td>
+                    <td>{{ company['podjetje'] }}</td>
+                    <td>{{ company['prihodek'] }}</td>
+                    <td>{{ company['dobicek'] }}</td>
+                    <td>{{ company['sredstva'] }}</td>
+                    <td>{{ company['zaposleni'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary">Naprej</button>
+        <p></p>
+    </form>
+{% endif %}
+
+<!-- Korak 2: Vnos uteži -->
+{% if data == 'weights' %}
+    <form method="POST">
+        <input type="hidden" name="data" value="results">
+        <h2>Vnesite parne primerjave kriterijev (pozitivna realna števila)</h2>
+        
+        <!-- Tabela za vnos parnih primerjav -->
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Prihodek</th>
+                    <th>Dobiček</th>
+                    <th>Sredstva</th>
+                    <th>Zaposleni</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set criteria = ['Prihodek', 'Dobiček', 'Sredstva', 'Zaposleni'] %}
+                {% for i in range(4) %}
+                <tr>
+                    <th>{{ criteria[i] }}</th>
+                    {% for j in range(4) %}
+                        <td>
+                            {% if i == j %}
+                                <!-- Diagonalne vrednosti so vedno 1 -->
+                                <input type="text" value="1" disabled class="form-control">
+                                <input type="hidden" name="pairwise_{{ i }}_{{ j }}" value="1">
+                            {% elif i < j %}
+                                <!-- Uporabnik vnese vrednost za zgornji trikotnik -->
+                                <input type="text" name="pairwise_{{ i }}_{{ j }}" class="form-control" placeholder="Vrednost">
+                            {% else %}
+                                <!-- Spodnji trikotnik se sam izračuna kot obratna vrednost -->
+                                <input type="text" value="auto" disabled class="form-control bg-light">
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary">Izračunaj</button>
+        <p></p>
+    </form>
+{% endif %}
+
+
+
+<!-- Korak 3: Rezultati AHP analize -->
+{% if data == 'results' %}
+    <h2>Rezultati AHP analize</h2>
+    <table class="table table-striped table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Mesto</th>
+                <th>Podjetje</th>
+                <th>Ocena</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for company in companies %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ company['podjetje'] }}</td>
+                <td>{{ company['score']|round(4) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+<script>
+    // JavaScript za "Select All"
+    document.getElementById('select_all').addEventListener('change', function(e) {
+        const checkboxes = document.querySelectorAll('.company-checkbox');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = e.target.checked;
+        });
+    });
+    </script>
+
+
+{% endblock %}
