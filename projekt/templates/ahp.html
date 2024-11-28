@@ -6,20 +6,41 @@
 <h1>AHP Analiza</h1>
 <br>
 
-<!-- Korak 1: Izbira podjetij -->
+<!-- Korak 1: Izbira kriterijev -->
 {% if data == 'selection' %}
+    <form method="POST">
+        <input type="hidden" name="data" value="companies">
+        <h2>Izberite kriterije za analizo</h2>
+        <table class="table table-striped table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th><input type="checkbox" id="select_all"> Izbira</th>
+                    <th>Kriterij</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for criterion in criteria %}
+                <tr>
+                    <td><input type="checkbox" class="criterion-checkbox" name="selected_criteria" value="{{ criterion }}"></td>
+                    <td>{{ criterion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary">Naprej</button>
+    </form>
+{% endif %}
+
+<!-- Korak 2: Izbira podjetij -->
+{% if data == 'companies' %}
     <form method="POST">
         <input type="hidden" name="data" value="weights">
         <h2>Izberite podjetja za analizo</h2>
         <table class="table table-striped table-bordered table-hover">
             <thead class="table-dark">
                 <tr>
-                    <th><input type="checkbox" id="select_all"> Izbira</th>
+                    <th><input type="checkbox" id="select_all_companies"> Izbira</th>
                     <th>Podjetje</th>
-                    <th>Prihodek</th>
-                    <th>Dobiček</th>
-                    <th>Sredstva</th>
-                    <th>Zaposleni</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,52 +48,40 @@
                 <tr>
                     <td><input type="checkbox" class="company-checkbox" name="selected_companies" value="{{ company['uvoz'] }}"></td>
                     <td>{{ company['podjetje'] }}</td>
-                    <td>{{ company['prihodek'] }}</td>
-                    <td>{{ company['dobicek'] }}</td>
-                    <td>{{ company['sredstva'] }}</td>
-                    <td>{{ company['zaposleni'] }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         <button type="submit" class="btn btn-primary">Naprej</button>
-        <p></p>
     </form>
 {% endif %}
 
-<!-- Korak 2: Vnos uteži -->
+<!-- Korak 3: Vnos parnih primerjav -->
 {% if data == 'weights' %}
     <form method="POST">
         <input type="hidden" name="data" value="results">
-        <h2>Vnesite parne primerjave kriterijev (pozitivna realna števila)</h2>
-        
-        <!-- Tabela za vnos parnih primerjav -->
+        <h2>Vnesite parne primerjave kriterijev</h2>
         <table class="table table-bordered">
             <thead>
                 <tr>
                     <th></th>
-                    <th>Prihodek</th>
-                    <th>Dobiček</th>
-                    <th>Sredstva</th>
-                    <th>Zaposleni</th>
+                    {% for criterion in session['selected_criteria'] %}
+                    <th>{{ criterion }}</th>
+                    {% endfor %}
                 </tr>
             </thead>
             <tbody>
-                {% set criteria = ['Prihodek', 'Dobiček', 'Sredstva', 'Zaposleni'] %}
-                {% for i in range(4) %}
+                {% for i in range(session['selected_criteria']|length) %}
                 <tr>
-                    <th>{{ criteria[i] }}</th>
-                    {% for j in range(4) %}
+                    <th>{{ session['selected_criteria'][i] }}</th>
+                    {% for j in range(session['selected_criteria']|length) %}
                         <td>
                             {% if i == j %}
-                                <!-- Diagonalne vrednosti so vedno 1 -->
                                 <input type="text" value="1" disabled class="form-control">
                                 <input type="hidden" name="pairwise_{{ i }}_{{ j }}" value="1">
                             {% elif i < j %}
-                                <!-- Uporabnik vnese vrednost za zgornji trikotnik -->
                                 <input type="text" name="pairwise_{{ i }}_{{ j }}" class="form-control" placeholder="Vrednost">
                             {% else %}
-                                <!-- Spodnji trikotnik se sam izračuna kot obratna vrednost -->
                                 <input type="text" value="auto" disabled class="form-control bg-light">
                             {% endif %}
                         </td>
@@ -81,15 +90,11 @@
                 {% endfor %}
             </tbody>
         </table>
-
         <button type="submit" class="btn btn-primary">Izračunaj</button>
-        <p></p>
     </form>
 {% endif %}
 
-
-
-<!-- Korak 3: Rezultati AHP analize -->
+<!-- Korak 4: Rezultati AHP analize -->
 {% if data == 'results' %}
     <h2>Rezultati AHP analize</h2>
     <table class="table table-striped table-bordered table-hover">
@@ -105,7 +110,7 @@
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>{{ company['podjetje'] }}</td>
-                <td>{{ company['score']|round(4) }}</td>
+                <td>{{ company['score'] }}</td>
             </tr>
             {% endfor %}
         </tbody>

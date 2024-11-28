@@ -79,21 +79,43 @@ def load_data():
 @app.route('/ahp', methods=['GET', 'POST'])
 def ahp():
     companies = load_data()
-
-    # Prvi korak: izbira podjetij
+    
+    # Kriteriji, ki so na voljo (moramo zagotoviti, da so imena v teh kriterijih v skladu s podatki)
+    criteria = [
+        'Prihodek',
+        'Sprememba prihodka',
+        'Dobiček',
+        'Sprememba dobička',
+        'Sredstva',
+        'Zaposleni',
+        'Rang države',
+        'Leta na seznamu'
+    ]
+    
+    # 1. Korak: Izbira kriterijev
     if request.method == 'GET' or request.form.get('data') == 'selection':
-        return render_template('ahp.html', data='selection', companies=companies)
-
-    # Drugi korak: vnos uteži
-    if request.form.get('data') == 'weights':
-        selected_ids = request.form.getlist('selected_companies')
-        selected_companies = [c for c in companies if c['uvoz'] in selected_ids]
+        return render_template('ahp.html', data='selection', criteria=criteria)
+    
+    # 2. Korak: Izbira podjetij
+    if request.form.get('data') == 'companies':
+        selected_criteria = request.form.getlist('selected_criteria')
+        session['selected_criteria'] = selected_criteria
+        
+        # Tukaj bomo prilagodili filtriranje podjetij
+        # Predpostavimo, da so imena v `fortune500.json` v manjših črkah (npr. 'prihodek', 'dobicek')
+        selected_companies = []
+        for company in companies:
+            if any(company.get(criterion.lower()) for criterion in selected_criteria):
+                selected_companies.append(company)
+        
         session['selected_companies'] = selected_companies
-        return render_template('ahp.html', data='weights', companies=selected_companies)
 
-    # Tretji korak: rezultati
-    if request.form.get('data') == 'results':
-        num_criteria = 4  # Število kriterijev (Prihodek, Dobiček, Sredstva, Zaposleni)
+        return render_template('ahp.html', data='companies', companies=selected_companies)
+
+    # 3. Korak: Vnos parnih primerjav (uteži)
+    if request.form.get('data') == 'weights':
+        selected_criteria = session.get('selected_criteria', [])
+        num_criteria = len(selected_criteria)
 
         # Preberi podatke iz tabele parnih primerjav
         pairwise_data = []
@@ -107,49 +129,32 @@ def ahp():
                         val = float(request.form.get(f"pairwise_{i}_{j}", 1))
                         row.append(val)
                     except ValueError:
-                        return render_template('ahp.html', data='weights',
-                                            error="Vse vrednosti morajo biti števila!",
-                                            companies=session.get('selected_companies', []))
+                        return render_template('ahp.html', data='weights', error="Vse vrednosti morajo biti števila!")
                 else:
-                    # Spodnji trikotnik je inverz zgornjega
                     row.append(1 / pairwise_data[j][i])
             pairwise_data.append(row)
 
         pairwise_matrix = np.array(pairwise_data)
-        print(f"Matrika parnih primerjav:\n{pairwise_matrix}")
 
         # Izračun uteži s pomočjo AHP algoritma
         column_sum = pairwise_matrix.sum(axis=0)
         normalized_matrix = pairwise_matrix / column_sum
         weights = normalized_matrix.mean(axis=1)
-        print(f"Uteži kriterijev: {weights}")
 
-        # Odločitvena matrika podjetij
+        # 4. Korak: Izračun rezultatov
         selected_companies = session.get('selected_companies', [])
         decision_matrix = []
         for company in selected_companies:
-            try:
-                decision_matrix.append([
-                    float(company['prihodek'].replace('$', '').replace(',', '')),
-                    float(company['dobicek'].replace('$', '').replace(',', '')),
-                    float(company['sredstva'].replace('$', '').replace(',', '')),
-                    float(company['zaposleni'].replace(',', ''))
-                ])
-            except ValueError:
-                return render_template('ahp.html', data='weights',
-                                    error=f"Napaka pri podatkih podjetja {company['podjetje']}",
-                                    companies=selected_companies)
+            row = []
+            for criterion in selected_criteria:
+                # Tukaj spremenimo, da iščemo ključe v manjših črkah (npr. 'prihodek', 'dobicek')
+                value = company.get(criterion.lower(), 0)
+                row.append(float(value.replace('$', '').replace(',', '')) if isinstance(value, str) else float(value))
+            decision_matrix.append(row)
 
         decision_matrix = np.array(decision_matrix)
-        print(f"Matrika odločanja: {decision_matrix}")
-
-        # Normalizacija matrike odločanja
         norm_matrix = decision_matrix / decision_matrix.sum(axis=0)
-        print(f"Normalizirana matrika: {norm_matrix}")
-
-        # Matrično množenje za ocene
         scores = norm_matrix @ weights
-        print(f"Rezultati: {scores}")
 
         # Dodeli rezultate in razvrsti
         for i, company in enumerate(selected_companies):
@@ -157,10 +162,6 @@ def ahp():
         sorted_companies = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
 
         return render_template('ahp.html', data='results', companies=sorted_companies)
-
-    return "Nepričakovano stanje!", 400
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
