@@ -1,64 +1,41 @@
-import mysql.connector
-from mysql.connector import Error
-import requests
+import pymongo
 from dotenv import load_dotenv
+import requests
 from bs4 import BeautifulSoup
 import json
 import os
 
+# Funkcija za povezavo z MongoDB
+def get_mongo_connection():
+    load_dotenv()
+    # Pridobi nastavitve iz okolja
+    db_host = os.getenv('DB_HOST')
+    db_name = os.getenv('DB_NAME')
+    client = pymongo.MongoClient(db_host)
+    db = client[db_name]
+    return db
+
+# Funkcija za vstavljanje podatkov v MongoDB
 def insert_into_db(data):
     try:
-        load_dotenv()
-        # Pridobi nastavitve iz okolja
-        db_host = os.getenv('DB_HOST')
-        db_database = os.getenv('DB_NAME')
-        db_user = os.getenv('DB_USER')
-        db_password = os.getenv('DB_PASSWORD')
+        db = get_mongo_connection()
+        companies_collection = db["Companies"]
+        companies_collection.delete_many({}) 
 
-        # Povezava z MySQL bazo
-        conn = mysql.connector.connect(
-            host=db_host,            # Nastavitev iz .env datoteke
-            database=db_database,    # Nastavitev iz .env datoteke
-            user=db_user,            # Nastavitev iz .env datoteke
-            password=db_password     # Nastavitev iz .env datoteke
-        )
+        # Vstavi nove ali posodobi obstoječe podatke v zbirki
+        for entry in data:
+            companies_collection.update_one(
+                {"povezava": entry["povezava"]},  # Poiščemo podjetje po povezavi
+                {"$set": entry},  # Posodobimo podjetje s temi podatki
+            )
 
-        if conn.is_connected():
-            cursor = conn.cursor()
+        print("Podatki so bili uspešno vstavljeni v MongoDB.")
+        return None  # Ni napake, vračamo None
 
-            cursor.execute("DELETE FROM Companies")
-            conn.commit()
+    except Exception as e:
+        return f"Napaka pri vstavljanju podatkov v MongoDB: {e}"
 
-            # Vstavljanje podatkov v bazo
-            for entry in data:
-                cursor.execute(''' 
-                INSERT INTO Companies (uvoz, podjetje, prihodek, sprememba_prihodka, dobicek, sprememba_dobicka,
-                sredstva, zaposleni, rang_drzave, leta_na_seznamu, povezava, TimeStamp)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CONVERT_TZ(NOW(), '+00:00', '+01:00'))
-                ''', (
-                    entry["uvoz"],
-                    entry["podjetje"],
-                    entry["prihodek"],
-                    entry["sprememba_prihodka"],
-                    entry["dobicek"],
-                    entry["sprememba_dobicka"],
-                    entry["sredstva"],
-                    entry["zaposleni"],
-                    entry["rang_drzave"],
-                    entry["leta_na_seznamu"],
-                    entry["povezava"]
-                ))
-
-            conn.commit()
-            return None  # Ni napake, vračamo None
-    except Error as e:
-        return f"Napaka pri vstavljanju podatkov v MySQL: {e}"
-    finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
-
-
+# Funkcija za zajemanje podatkov iz strani
 def scrapeData(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36"

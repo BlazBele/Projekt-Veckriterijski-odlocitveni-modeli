@@ -1,4 +1,4 @@
-{% extends 'base.html' %} 
+{% extends 'base.html' %}
 
 {% block title %}Seznam podjetij{% endblock %}  <!-- Spremeni naslov strani -->
 
@@ -22,19 +22,18 @@
         <tbody>
             {% for company in companies %}
             <tr>
-                <td>{{ company[0] }}</td> 
-                <td>{{ company[1] }}</td> 
-                <td>{{ company[2] }}</td> 
-                <td>{{ company[3] }}</td> 
-                <td>{{ company[4] }}</td> 
-                <td>{{ company[5] }}</td> 
-                <td>{{ company[6] }}</td> 
-                <td>{{ company[7] }}</td> 
-                <td>{{ company[8] }}</td> 
-                <td>{{ company[9] }}</td> 
+                <td>{{ company['uvoz'] }}</td> 
+                <td>{{ company['podjetje'] }}</td> 
+                <td>{{ company['prihodek'] }}</td> 
+                <td>{{ company['sprememba_prihodka'] }}</td> 
+                <td>{{ company['dobicek'] }}</td> 
+                <td>{{ company['sprememba_dobicka'] }}</td> 
+                <td>{{ company['sredstva'] }}</td> 
+                <td>{{ company['zaposleni'] }}</td> 
+                <td>{{ company['rang_drzave'] }}</td> 
+                <td>{{ company['leta_na_seznamu'] }}</td> 
             </tr>
             {% endfor %}
         </tbody>
     </table>
 {% endblock %}
-
