@@ -6,6 +6,7 @@ import json
 import os
 import numpy as np
 from dotenv import load_dotenv
+from pyDecision.algorithm import topsis_method
 
 # Nalaganje okolijskih spremenljivk iz .env datoteke
 load_dotenv()
@@ -65,8 +66,6 @@ def scrape():
     return jsonify({"status": "success", "message": message, "data": data}), 200
 
 
-import json  # Za serializacijo podatkov
-
 @app.route("/wsm", methods=["GET", "POST"])
 def wsm():
     """Stran za metodo WSM in obdelavo rezultatov analize."""
@@ -120,6 +119,166 @@ def wsm():
 
 
 
+@app.route('/topsis', methods=['GET', 'POST'])
+def topsis():
+
+    companies = fetch_companies_from_db()
+    data = 'selection'  # Določa korak (selection, weights, results)
+    results = None
+    selected_companies = []
+
+    if request.method == 'POST':
+        # Get the selected companies and weights
+        data = request.form.get('data')
+        if data == 'selection':
+            # Get selected companies from the form
+            selected_companies_ids = request.form.getlist('selected_companies')
+            selected_companies = [company for company in companies if str(company['uvoz']) in selected_companies_ids]
+            return render_template('topsis.html', data='weights', companies=companies, selected_companies=json.dumps(selected_companies))
+
+        elif data == 'weights':
+            # Get the weights from the form
+            weight_income = float(request.form['weight_income'])
+            weight_profit = float(request.form['weight_profit'])
+            weight_assets = float(request.form['weight_assets'])
+            weight_employees = float(request.form['weight_employees'])
+
+            # Get the selected companies
+            selected_companies_json = request.form['selected_companies_json']
+            selected_companies = json.loads(selected_companies_json)
+
+            # Prepare the dataset for TOPSIS (converting the selected companies to numerical values)
+            dataset = []
+            for company in selected_companies:
+                # Clean and convert financial values to float
+                income = float(company['prihodek'].replace('$', '').replace(',', ''))
+                profit = float(company['dobicek'].replace('$', '').replace(',', ''))
+                assets = float(company['sredstva'].replace('$', '').replace(',', ''))
+                employees = float(company['zaposleni'].replace(',', ''))  # Only remove commas for employee count
+
+                # Append cleaned data to dataset
+                dataset.append([income, profit, assets, employees])
+
+            # Weights and Criterion Types
+            weights = [weight_income, weight_profit, weight_assets, weight_employees]
+            criterion_type = ['max', 'max', 'max', 'max']  # Assuming 'max' for all criteria
+
+            # Call the TOPSIS method
+            dataset_np = np.array(dataset)
+            relative_closeness = topsis_method(dataset_np, weights, criterion_type, graph=False, verbose=False)
+
+            # Prepare the results with scores and assign the score to each company
+            for i, company in enumerate(selected_companies):
+                company['score'] = round(relative_closeness[i], 2)  # Round the score to 1 decimal place
+
+            # Sort companies by their score in descending order (highest to lowest score)
+            selected_companies_sorted = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
+
+            # Render the sorted results on the results page
+            return render_template('topsis.html', data='results', results=selected_companies_sorted)
+
+    # If GET request, show the company selection form
+    return render_template('topsis.html', data='selection', companies=companies)
+
+
+@app.route("/promethee", methods=["GET", "POST"])
+def promethee():
+    """Stran za metodo PROMETHEE in obdelavo rezultatov analize."""
+    companies = fetch_companies_from_db()
+    data = 'selection'  # Določa korak (selection, weights, results)
+    results = None
+    selected_companies = []
+
+    if request.method == "POST":
+        if request.form.get('data') == 'selection':  # Prvi korak: Izbira podjetij
+            selected_ids = request.form.getlist('selected_companies')
+            if not selected_ids:
+                error = "Izberite vsaj eno podjetje."
+                return render_template("promethee.html", companies=companies, data='selection', error=error)
+
+            # Shrani izbrana podjetja za naslednji korak
+            selected_companies = [c for c in companies if c['uvoz'] in selected_ids]
+            return render_template("promethee.html", selected_companies=json.dumps(selected_companies), data='weights')
+
+        elif request.form.get('data') == 'weights':  # Drugi korak: Vnos uteži
+            selected_companies = json.loads(request.form.get('selected_companies_json', '[]'))
+
+            # Pridobitev uteži iz obrazca
+            weight_income = float(request.form['weight_income'])
+            weight_profit = float(request.form['weight_profit'])
+            weight_assets = float(request.form['weight_assets'])
+            weight_employees = float(request.form['weight_employees'])
+
+            # Za PROMETHEE potrebujemo matriko preferenc in uteži
+            preferences = []
+            for company in selected_companies:
+                income = float(company['prihodek'].replace('$', '').replace(',', ''))
+                profit = float(company['dobicek'].replace('$', '').replace(',', ''))
+                assets = float(company['sredstva'].replace('$', '').replace(',', ''))
+                employees = float(company['zaposleni'].replace(',', ''))
+                preferences.append([income, profit, assets, employees])
+
+            # Uteži za različne dejavnike
+            weights = [weight_income, weight_profit, weight_assets, weight_employees]
+
+            # Izračun PROMETHEE rezultatov
+            # Ocenjevanje z metodo PROMETHEE
+            positive_flows, negative_flows = promethee_method(preferences, weights)
+
+            # Združevanje rezultatov
+            for i, company in enumerate(selected_companies):
+                company['positive_flow'] = positive_flows[i]
+                company['negative_flow'] = negative_flows[i]
+                company['score'] = round(positive_flows[i] - negative_flows[i], 1)
+
+            # Razvrščanje podjetij po rezultatu (score)
+            results = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
+            data = 'results'
+
+    return render_template("promethee.html", companies=companies, data=data, selected_companies=json.dumps(selected_companies), results=results)
+
+
+def promethee_method(preferences, weights):
+    """
+    Implementacija osnovne PROMETHEE metode za izračun pozitivnih in negativnih tokov.
+    preferences - seznam preferenc (vsaka vrstica je podjetje)
+    weights - uteži za vsak kriterij (prihodek, dobiček, sredstva, zaposleni)
+    """
+    n = len(preferences)
+    m = len(preferences[0])
+    
+    # Matrika prednosti (preference matrix)
+    preference_matrix = []
+    for i in range(n):
+        preference_row = []
+        for j in range(n):
+            # Razlika med podjetjema i in j za vsak kriterij
+            preference = sum([weights[k] * (preferences[i][k] - preferences[j][k])
+                              for k in range(m)])
+            preference_row.append(preference)
+        preference_matrix.append(preference_row)
+
+    # Izračun pozitivnih in negativnih tokov
+    positive_flows = []
+    negative_flows = []
+    for i in range(n):
+        positive_flow = 0
+        negative_flow = 0
+        for j in range(n):
+            if preference_matrix[i][j] > 0:
+                positive_flow += preference_matrix[i][j]
+            else:
+                negative_flow += -preference_matrix[i][j]
+        positive_flows.append(positive_flow)
+        negative_flows.append(negative_flow)
+
+    return positive_flows, negative_flows
+
+
+
+
+
+
 
 
 
@@ -138,15 +297,8 @@ def save_to_db(data):
     """Shrani podatke v MongoDB."""
     db.Companies.insert_many(data)
 
-@app.route("/topsis")
-def topsis():
-    """Stran za metodo TOPSIS."""
-    return render_template("topsis.html")
 
-@app.route("/promethee")
-def promethee():
-    """Stran za metodo PROMETHEE."""
-    return render_template("promethee.html")
+
 
 @app.route("/upload")
 def upload():

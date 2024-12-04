@@ -1,0 +1,640 @@
+[{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a6d"
+  },
+  "povezava": "/company/walmart/",
+  "dobicek": "$15,511",
+  "leta_na_seznamu": "30",
+  "podjetje": "Walmart",
+  "prihodek": "$648,125",
+  "rang_drzave": "-",
+  "sprememba_dobicka": "32.8%",
+  "sprememba_prihodka": "6%",
+  "sredstva": "$252,399",
+  "uvoz": "1",
+  "zaposleni": "2,100,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a6e"
+  },
+  "povezava": "/company/amazon-com/",
+  "dobicek": "$30,425",
+  "leta_na_seznamu": "16",
+  "podjetje": "Amazon",
+  "prihodek": "$574,785",
+  "rang_drzave": "2",
+  "sprememba_dobicka": "-",
+  "sprememba_prihodka": "11.8%",
+  "sredstva": "$527,854",
+  "uvoz": "2",
+  "zaposleni": "1,525,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a6f"
+  },
+  "povezava": "/company/state-grid/",
+  "dobicek": "$9,204.3",
+  "leta_na_seznamu": "24",
+  "podjetje": "State Grid",
+  "prihodek": "$545,947.5",
+  "rang_drzave": "-",
+  "sprememba_dobicka": "12.4%",
+  "sprememba_prihodka": "3%",
+  "sredstva": "$781,126.2",
+  "uvoz": "3",
+  "zaposleni": "1,361,423"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a70"
+  },
+  "povezava": "/company/saudi-aramco/",
+  "dobicek": "$120,699.3",
+  "leta_na_seznamu": "6",
+  "podjetje": "Saudi Aramco",
+  "prihodek": "$494,890.1",
+  "rang_drzave": "-2",
+  "sprememba_dobicka": "-24.1%",
+  "sprememba_prihodka": "-18%",
+  "sredstva": "$660,819.2",
+  "uvoz": "4",
+  "zaposleni": "73,311"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a71"
+  },
+  "povezava": "/company/sinopec-group/",
+  "dobicek": "$9,393.4",
+  "leta_na_seznamu": "26",
+  "podjetje": "Sinopec Group",
+  "prihodek": "$429,699.7",
+  "rang_drzave": "1",
+  "sprememba_dobicka": "-2.7%",
+  "sprememba_prihodka": "-8.8%",
+  "sredstva": "$382,688",
+  "uvoz": "5",
+  "zaposleni": "513,434"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a72"
+  },
+  "povezava": "/company/china-national-petroleum/",
+  "dobicek": "$21,294.7",
+  "leta_na_seznamu": "24",
+  "podjetje": "China National Petroleum",
+  "prihodek": "$421,713.6",
+  "rang_drzave": "-1",
+  "sprememba_dobicka": "1%",
+  "sprememba_prihodka": "-12.7%",
+  "sredstva": "$630,562",
+  "uvoz": "6",
+  "zaposleni": "1,026,301"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a73"
+  },
+  "povezava": "/company/apple/",
+  "dobicek": "$96,995",
+  "leta_na_seznamu": "22",
+  "podjetje": "Apple",
+  "prihodek": "$383,285",
+  "rang_drzave": "1",
+  "sprememba_dobicka": "-2.8%",
+  "sprememba_prihodka": "-2.8%",
+  "sredstva": "$352,583",
+  "uvoz": "7",
+  "zaposleni": "161,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a74"
+  },
+  "povezava": "/company/unitedhealth-group/",
+  "dobicek": "$22,381",
+  "leta_na_seznamu": "28",
+  "podjetje": "UnitedHealth Group",
+  "prihodek": "$371,622",
+  "rang_drzave": "2",
+  "sprememba_dobicka": "11.2%",
+  "sprememba_prihodka": "14.6%",
+  "sredstva": "$273,720",
+  "uvoz": "8",
+  "zaposleni": "440,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a75"
+  },
+  "povezava": "/company/berkshire-hathaway/",
+  "dobicek": "$96,223",
+  "leta_na_seznamu": "28",
+  "podjetje": "Berkshire Hathaway",
+  "prihodek": "$364,482",
+  "rang_drzave": "5",
+  "sprememba_dobicka": "-",
+  "sprememba_prihodka": "20.7%",
+  "sredstva": "$1,069,978",
+  "uvoz": "9",
+  "zaposleni": "396,500"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a76"
+  },
+  "povezava": "/company/cvs-health/",
+  "dobicek": "$8,344",
+  "leta_na_seznamu": "29",
+  "podjetje": "CVS Health",
+  "prihodek": "$357,776",
+  "rang_drzave": "1",
+  "sprememba_dobicka": "101.1%",
+  "sprememba_prihodka": "11%",
+  "sredstva": "$249,728",
+  "uvoz": "10",
+  "zaposleni": "259,500"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a77"
+  },
+  "povezava": "/company/volkswagen/",
+  "dobicek": "$17,944.5",
+  "leta_na_seznamu": "30",
+  "podjetje": "Volkswagen",
+  "prihodek": "$348,408.1",
+  "rang_drzave": "4",
+  "sprememba_dobicka": "10.5%",
+  "sprememba_prihodka": "18.6%",
+  "sredstva": "$663,063.8",
+  "uvoz": "11",
+  "zaposleni": "684,025"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a78"
+  },
+  "povezava": "/company/exxon-mobil/",
+  "dobicek": "$36,010",
+  "leta_na_seznamu": "30",
+  "podjetje": "Exxon Mobil",
+  "prihodek": "$344,582",
+  "rang_drzave": "-5",
+  "sprememba_dobicka": "-35.4%",
+  "sprememba_prihodka": "-16.7%",
+  "sredstva": "$376,317",
+  "uvoz": "12",
+  "zaposleni": "61,500"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a79"
+  },
+  "povezava": "/company/royal-dutch-shell/",
+  "dobicek": "$19,359",
+  "leta_na_seznamu": "30",
+  "podjetje": "Shell",
+  "prihodek": "$323,183",
+  "rang_drzave": "-4",
+  "sprememba_dobicka": "-54.2%",
+  "sprememba_prihodka": "-16.3%",
+  "sredstva": "$406,270",
+  "uvoz": "13",
+  "zaposleni": "103,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a7a"
+  },
+  "povezava": "/company/china-state-construction-engineering/",
+  "dobicek": "$4,371.5",
+  "leta_na_seznamu": "13",
+  "podjetje": "China State Construction Engineering",
+  "prihodek": "$320,430.5",
+  "rang_drzave": "-1",
+  "sprememba_dobicka": "3.3%",
+  "sprememba_prihodka": "4.8%",
+  "sredstva": "$410,143.8",
+  "uvoz": "14",
+  "zaposleni": "382,894"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a7b"
+  },
+  "povezava": "/company/toyota-motor/",
+  "dobicek": "$34,214.4",
+  "leta_na_seznamu": "30",
+  "podjetje": "Toyota Motor",
+  "prihodek": "$312,018.2",
+  "rang_drzave": "4",
+  "sprememba_dobicka": "88.9%",
+  "sprememba_prihodka": "13.7%",
+  "sredstva": "$595,915.2",
+  "uvoz": "15",
+  "zaposleni": "380,793"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a7c"
+  },
+  "povezava": "/company/mckesson/",
+  "dobicek": "$3,002",
+  "leta_na_seznamu": "30",
+  "podjetje": "McKesson",
+  "prihodek": "$308,951",
+  "rang_drzave": "2",
+  "sprememba_dobicka": "-15.7%",
+  "sprememba_prihodka": "11.7%",
+  "sredstva": "$67,443",
+  "uvoz": "16",
+  "zaposleni": "48,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a7d"
+  },
+  "povezava": "/company/alphabet/",
+  "dobicek": "$73,795",
+  "leta_na_seznamu": "16",
+  "podjetje": "Alphabet",
+  "prihodek": "$307,394",
+  "rang_drzave": "-",
+  "sprememba_dobicka": "23.1%",
+  "sprememba_prihodka": "8.7%",
+  "sredstva": "$402,392",
+  "uvoz": "17",
+  "zaposleni": "182,502"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a7e"
+  },
+  "povezava": "/company/amerisourcebergen/",
+  "dobicek": "$1,745.3",
+  "leta_na_seznamu": "25",
+  "podjetje": "Cencora",
+  "prihodek": "$262,173.4",
+  "rang_drzave": "6",
+  "sprememba_dobicka": "2.7%",
+  "sprememba_prihodka": "9.9%",
+  "sredstva": "$62,558.8",
+  "uvoz": "18",
+  "zaposleni": "44,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a7f"
+  },
+  "povezava": "/company/trafigura-group/",
+  "dobicek": "$7,393.2",
+  "leta_na_seznamu": "10",
+  "podjetje": "Trafigura Group",
+  "prihodek": "$244,280.2",
+  "rang_drzave": "-7",
+  "sprememba_dobicka": "5.7%",
+  "sprememba_prihodka": "-23.3%",
+  "sredstva": "$83,382.5",
+  "uvoz": "19",
+  "zaposleni": "12,479"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b879438061446a80"
+  },
+  "povezava": "/company/costco/",
+  "dobicek": "$6,292",
+  "leta_na_seznamu": "30",
+  "podjetje": "Costco Wholesale",
+  "prihodek": "$242,290",
+  "rang_drzave": "6",
+  "sprememba_dobicka": "7.7%",
+  "sprememba_prihodka": "6.8%",
+  "sredstva": "$68,994",
+  "uvoz": "20",
+  "zaposleni": "316,000"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e1fe"
+  },
+  "uvoz": "1",
+  "podjetje": "Walmart",
+  "prihodek": "$648,125",
+  "sprememba_prihodka": "6%",
+  "dobicek": "$15,511",
+  "sprememba_dobicka": "32.8%",
+  "sredstva": "$252,399",
+  "zaposleni": "2,100,000",
+  "rang_drzave": "-",
+  "leta_na_seznamu": "30",
+  "povezava": "/company/walmart/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e1ff"
+  },
+  "uvoz": "2",
+  "podjetje": "Amazon",
+  "prihodek": "$574,785",
+  "sprememba_prihodka": "11.8%",
+  "dobicek": "$30,425",
+  "sprememba_dobicka": "-",
+  "sredstva": "$527,854",
+  "zaposleni": "1,525,000",
+  "rang_drzave": "2",
+  "leta_na_seznamu": "16",
+  "povezava": "/company/amazon-com/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e200"
+  },
+  "uvoz": "3",
+  "podjetje": "State Grid",
+  "prihodek": "$545,947.5",
+  "sprememba_prihodka": "3%",
+  "dobicek": "$9,204.3",
+  "sprememba_dobicka": "12.4%",
+  "sredstva": "$781,126.2",
+  "zaposleni": "1,361,423",
+  "rang_drzave": "-",
+  "leta_na_seznamu": "24",
+  "povezava": "/company/state-grid/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e201"
+  },
+  "uvoz": "4",
+  "podjetje": "Saudi Aramco",
+  "prihodek": "$494,890.1",
+  "sprememba_prihodka": "-18%",
+  "dobicek": "$120,699.3",
+  "sprememba_dobicka": "-24.1%",
+  "sredstva": "$660,819.2",
+  "zaposleni": "73,311",
+  "rang_drzave": "-2",
+  "leta_na_seznamu": "6",
+  "povezava": "/company/saudi-aramco/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e202"
+  },
+  "uvoz": "5",
+  "podjetje": "Sinopec Group",
+  "prihodek": "$429,699.7",
+  "sprememba_prihodka": "-8.8%",
+  "dobicek": "$9,393.4",
+  "sprememba_dobicka": "-2.7%",
+  "sredstva": "$382,688",
+  "zaposleni": "513,434",
+  "rang_drzave": "1",
+  "leta_na_seznamu": "26",
+  "povezava": "/company/sinopec-group/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e203"
+  },
+  "uvoz": "6",
+  "podjetje": "China National Petroleum",
+  "prihodek": "$421,713.6",
+  "sprememba_prihodka": "-12.7%",
+  "dobicek": "$21,294.7",
+  "sprememba_dobicka": "1%",
+  "sredstva": "$630,562",
+  "zaposleni": "1,026,301",
+  "rang_drzave": "-1",
+  "leta_na_seznamu": "24",
+  "povezava": "/company/china-national-petroleum/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e204"
+  },
+  "uvoz": "7",
+  "podjetje": "Apple",
+  "prihodek": "$383,285",
+  "sprememba_prihodka": "-2.8%",
+  "dobicek": "$96,995",
+  "sprememba_dobicka": "-2.8%",
+  "sredstva": "$352,583",
+  "zaposleni": "161,000",
+  "rang_drzave": "1",
+  "leta_na_seznamu": "22",
+  "povezava": "/company/apple/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e205"
+  },
+  "uvoz": "8",
+  "podjetje": "UnitedHealth Group",
+  "prihodek": "$371,622",
+  "sprememba_prihodka": "14.6%",
+  "dobicek": "$22,381",
+  "sprememba_dobicka": "11.2%",
+  "sredstva": "$273,720",
+  "zaposleni": "440,000",
+  "rang_drzave": "2",
+  "leta_na_seznamu": "28",
+  "povezava": "/company/unitedhealth-group/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e206"
+  },
+  "uvoz": "9",
+  "podjetje": "Berkshire Hathaway",
+  "prihodek": "$364,482",
+  "sprememba_prihodka": "20.7%",
+  "dobicek": "$96,223",
+  "sprememba_dobicka": "-",
+  "sredstva": "$1,069,978",
+  "zaposleni": "396,500",
+  "rang_drzave": "5",
+  "leta_na_seznamu": "28",
+  "povezava": "/company/berkshire-hathaway/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e207"
+  },
+  "uvoz": "10",
+  "podjetje": "CVS Health",
+  "prihodek": "$357,776",
+  "sprememba_prihodka": "11%",
+  "dobicek": "$8,344",
+  "sprememba_dobicka": "101.1%",
+  "sredstva": "$249,728",
+  "zaposleni": "259,500",
+  "rang_drzave": "1",
+  "leta_na_seznamu": "29",
+  "povezava": "/company/cvs-health/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e208"
+  },
+  "uvoz": "11",
+  "podjetje": "Volkswagen",
+  "prihodek": "$348,408.1",
+  "sprememba_prihodka": "18.6%",
+  "dobicek": "$17,944.5",
+  "sprememba_dobicka": "10.5%",
+  "sredstva": "$663,063.8",
+  "zaposleni": "684,025",
+  "rang_drzave": "4",
+  "leta_na_seznamu": "30",
+  "povezava": "/company/volkswagen/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e209"
+  },
+  "uvoz": "12",
+  "podjetje": "Exxon Mobil",
+  "prihodek": "$344,582",
+  "sprememba_prihodka": "-16.7%",
+  "dobicek": "$36,010",
+  "sprememba_dobicka": "-35.4%",
+  "sredstva": "$376,317",
+  "zaposleni": "61,500",
+  "rang_drzave": "-5",
+  "leta_na_seznamu": "30",
+  "povezava": "/company/exxon-mobil/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e20a"
+  },
+  "uvoz": "13",
+  "podjetje": "Shell",
+  "prihodek": "$323,183",
+  "sprememba_prihodka": "-16.3%",
+  "dobicek": "$19,359",
+  "sprememba_dobicka": "-54.2%",
+  "sredstva": "$406,270",
+  "zaposleni": "103,000",
+  "rang_drzave": "-4",
+  "leta_na_seznamu": "30",
+  "povezava": "/company/royal-dutch-shell/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e20b"
+  },
+  "uvoz": "14",
+  "podjetje": "China State Construction Engineering",
+  "prihodek": "$320,430.5",
+  "sprememba_prihodka": "4.8%",
+  "dobicek": "$4,371.5",
+  "sprememba_dobicka": "3.3%",
+  "sredstva": "$410,143.8",
+  "zaposleni": "382,894",
+  "rang_drzave": "-1",
+  "leta_na_seznamu": "13",
+  "povezava": "/company/china-state-construction-engineering/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e20c"
+  },
+  "uvoz": "15",
+  "podjetje": "Toyota Motor",
+  "prihodek": "$312,018.2",
+  "sprememba_prihodka": "13.7%",
+  "dobicek": "$34,214.4",
+  "sprememba_dobicka": "88.9%",
+  "sredstva": "$595,915.2",
+  "zaposleni": "380,793",
+  "rang_drzave": "4",
+  "leta_na_seznamu": "30",
+  "povezava": "/company/toyota-motor/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e20d"
+  },
+  "uvoz": "16",
+  "podjetje": "McKesson",
+  "prihodek": "$308,951",
+  "sprememba_prihodka": "11.7%",
+  "dobicek": "$3,002",
+  "sprememba_dobicka": "-15.7%",
+  "sredstva": "$67,443",
+  "zaposleni": "48,000",
+  "rang_drzave": "2",
+  "leta_na_seznamu": "30",
+  "povezava": "/company/mckesson/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e20e"
+  },
+  "uvoz": "17",
+  "podjetje": "Alphabet",
+  "prihodek": "$307,394",
+  "sprememba_prihodka": "8.7%",
+  "dobicek": "$73,795",
+  "sprememba_dobicka": "23.1%",
+  "sredstva": "$402,392",
+  "zaposleni": "182,502",
+  "rang_drzave": "-",
+  "leta_na_seznamu": "16",
+  "povezava": "/company/alphabet/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e20f"
+  },
+  "uvoz": "18",
+  "podjetje": "Cencora",
+  "prihodek": "$262,173.4",
+  "sprememba_prihodka": "9.9%",
+  "dobicek": "$1,745.3",
+  "sprememba_dobicka": "2.7%",
+  "sredstva": "$62,558.8",
+  "zaposleni": "44,000",
+  "rang_drzave": "6",
+  "leta_na_seznamu": "25",
+  "povezava": "/company/amerisourcebergen/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e210"
+  },
+  "uvoz": "19",
+  "podjetje": "Trafigura Group",
+  "prihodek": "$244,280.2",
+  "sprememba_prihodka": "-23.3%",
+  "dobicek": "$7,393.2",
+  "sprememba_dobicka": "5.7%",
+  "sredstva": "$83,382.5",
+  "zaposleni": "12,479",
+  "rang_drzave": "-7",
+  "leta_na_seznamu": "10",
+  "povezava": "/company/trafigura-group/"
+},
+{
+  "_id": {
+    "$oid": "674f3fb9b75b2793b317e211"
+  },
+  "uvoz": "20",
+  "podjetje": "Costco Wholesale",
+  "prihodek": "$242,290",
+  "sprememba_prihodka": "6.8%",
+  "dobicek": "$6,292",
+  "sprememba_dobicka": "7.7%",
+  "sredstva": "$68,994",
+  "zaposleni": "316,000",
+  "rang_drzave": "6",
+  "leta_na_seznamu": "30",
+  "povezava": "/company/costco/"
+}]
