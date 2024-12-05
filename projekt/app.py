@@ -6,7 +6,8 @@ import json
 import os
 import numpy as np
 from dotenv import load_dotenv
-from pyDecision.algorithm import topsis_method
+from pyDecision.algorithm import ahp_method
+
 
 # Nalaganje okolijskih spremenljivk iz .env datoteke
 load_dotenv()
@@ -114,10 +115,6 @@ def wsm():
             data = 'results'
 
     return render_template("wsm.html", companies=companies, data=data, selected_companies=json.dumps(selected_companies), results=results)
-
-
-
-
 
 @app.route('/topsis', methods=['GET', 'POST'])
 def topsis():
@@ -275,29 +272,9 @@ def promethee_method(preferences, weights):
     return positive_flows, negative_flows
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def save_to_db(data):
     """Shrani podatke v MongoDB."""
     db.Companies.insert_many(data)
-
-
 
 
 @app.route("/upload")
@@ -312,40 +289,100 @@ def load_data():
 
 
 
-
-
-
-
-
-
-@app.route('/ahp', methods=['GET', 'POST'])
+@app.route("/ahp", methods=["GET", "POST"])
 def ahp():
+    """Stran za metodo AHP in obdelavo rezultatov analize."""
+    # Fetch podatkov za analizo
     companies = fetch_companies_from_db()
+    criteria = ["prihodek", "dobicek", "sredstva", "zaposleni"]  # Merila za analizo v manjših črkah
+    data = 'selection'
+    results = None
+    selected_companies = []
 
-    # Prvi korak: izbira podjetij
-    if request.method == 'GET' or request.form.get('data') == 'selection':
-        return render_template('ahp.html', data='selection', companies=companies)
+    if request.method == "POST":
+        if request.form.get('data') == 'selection':  # Prvi korak: Izbor podjetij
+            selected_ids = request.form.getlist('selected_companies')
+            if not selected_ids:
+                error = "Izberite vsaj eno podjetje."
+                return render_template(
+                    "ahp.html",
+                    companies=companies,
+                    data='selection',
+                    error=error
+                )
 
-    # Drugi korak: vnos uteži
-    if request.form.get('data') == 'weights':
-        selected_companies = get_selected_companies(companies)
-        session['selected_companies'] = selected_companies
-        return render_template('ahp.html', data='weights', companies=selected_companies)
+            selected_companies = [
+                c for c in companies if c['uvoz'] in selected_ids
+            ]
+            return render_template(
+                "ahp.html",
+                selected_companies=json.dumps(selected_companies),
+                data='pairwise',
+                criteria=criteria
+            )
 
-    # Tretji korak: rezultati
-    if request.form.get('data') == 'results':
-        selected_companies = session.get('selected_companies', [])
-        pairwise_matrix = get_pairwise_matrix(request)
-        weights = calculate_weights(pairwise_matrix)
+        elif request.form.get('data') == 'pairwise':  # Drugi korak: Vnos parnih primerjav
+            # Deserialize selected companies
+            selected_companies = json.loads(request.form.get('selected_companies_json', '[]'))
 
-        decision_matrix = get_decision_matrix(selected_companies)
-        norm_matrix = normalize_decision_matrix(decision_matrix)
-        scores = calculate_scores(norm_matrix, weights)
+            # Zbiranje matrike parnih primerjav
+            pairwise_data = []
+            for i in range(len(criteria)):
+                row = []
+                for j in range(len(criteria)):
+                    if j > i:
+                        # Vrednosti parne primerjave (zgornja trikotna matrika)
+                        value = float(request.form.get(f'pairwise_{i}_{j}', '1'))
+                        row.append(value)
+                    elif j == i:
+                        row.append(1)  # Diagonalna vrednost je vedno 1
+                    else:
+                        # Inverzna vrednost za spodnjo trikotno matriko
+                        row.append(1 / pairwise_data[j][i])
+                pairwise_data.append(row)
 
-        sorted_companies = sort_companies_by_score(selected_companies, scores)
-        return render_template('ahp.html', data='results', companies=sorted_companies)
+            pairwise_matrix = np.array(pairwise_data)
 
-    return "Nepričakovano stanje!", 400
+            # Izračun uteži in konsistentnosti
+            weights, rc = ahp_method(pairwise_matrix, wd='geometric')
+
+            if rc > 0.1:
+                error = "Razmerja so nekonsistentna (RC > 0.1). Poskusite znova."
+                return render_template(
+                    "ahp.html",
+                    selected_companies=json.dumps(selected_companies),
+                    data='pairwise',
+                    criteria=criteria,
+                    error=error
+                )
+
+            # Izračun AHP ocen za podjetja
+            for company in selected_companies:
+                # Pretvarjanje vrednosti v številke (opazite, da zdaj dostopamo do majhnih ključev)
+                scores = [
+                    float(company[crit].replace('$', '').replace(',', ''))  # Uporabimo male črke za ključe
+                    for crit in criteria
+                ]
+                # Utežena vsota
+                company['score'] = round(sum(w * s for w, s in zip(weights, scores)), 1)
+
+            # Razvrstitev rezultatov po AHP oceni
+            results = sorted(
+                selected_companies,
+                key=lambda x: x['score'],
+                reverse=True
+            )
+            data = 'results'
+
+    return render_template(
+        "ahp.html",
+        companies=companies,
+        data=data,
+        selected_companies=json.dumps(selected_companies),
+        results=results,
+        criteria=criteria
+    )
+
 
 # Vrne seznam izbranih podjetij na podlagi uporabniške izbire.
 def get_selected_companies(companies):

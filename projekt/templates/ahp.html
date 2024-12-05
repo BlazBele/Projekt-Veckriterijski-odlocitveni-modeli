@@ -1,16 +1,15 @@
 {% extends 'base.html' %}
 
-{% block title %}WSM Analiza{% endblock %}
+{% block title %}AHP Analiza{% endblock %}
 
 {% block content %}
-<h1>WSM Analiza</h1>
-<br>
+<h2 class="mb-4">AHP Analiza</h2>
 
-<!-- Korak 1: Izbira podjetij -->
 {% if data == 'selection' %}
-    <form method="POST">
-        <input type="hidden" name="data" value="weights">
-        <h2>Izberite podjetja za analizo</h2>
+    <!-- Prvi korak: Izbor podjetij -->
+    <form action="{{ url_for('ahp') }}" method="POST">
+        <input type="hidden" name="data" value="selection">
+        <h3>Izberi podjetja za analizo</h3>
         <table class="table table-striped table-bordered table-hover">
             <thead class="table-dark">
                 <tr>
@@ -26,7 +25,7 @@
             <tbody>
                 {% for company in companies %}
                 <tr>
-                    <td><input type="checkbox" class="company-checkbox" name="selected_companies" value="{{ company['uvoz'] }}"></td>
+                    <td><input type="checkbox" name="selected_companies" value="{{ company['uvoz'] }}" class="company-checkbox"></td>
                     <td>{{ company['uvoz'] }}</td>
                     <td>{{ company['podjetje'] }}</td>
                     <td>{{ company['prihodek'] }}</td>
@@ -37,38 +36,53 @@
                 {% endfor %}
             </tbody>
         </table>
-        <button type="submit" class="btn btn-primary">Naprej</button>
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+        <button type="submit" class="btn btn-primary mt-3">Naprej</button>
     </form>
-{% endif %}
 
-<!-- Korak 2: Vnos uteži -->
-{% if data == 'weights' %}
-    <form method="POST">
-        <input type="hidden" name="data" value="results">
-        <h2>Vnesite uteži za dejavnike (v razponu od 0 do 1)</h2>
-        <div class="form-group">
-            <label for="weight_income">Utež za Prihodek:</label>
-            <input type="number" id="weight_income" name="weight_income" min="0" max="1" step="0.01" required class="form-control">
-        </div>
-        <div class="form-group">
-            <label for="weight_profit">Utež za Dobiček:</label>
-            <input type="number" id="weight_profit" name="weight_profit" min="0" max="1" step="0.01" required class="form-control">
-        </div>
-        <div class="form-group">
-            <label for="weight_assets">Utež za Sredstva:</label>
-            <input type="number" id="weight_assets" name="weight_assets" min="0" max="1" step="0.01" required class="form-control">
-        </div>
-        <div class="form-group">
-            <label for="weight_employees">Utež za Zaposlene:</label>
-            <input type="number" id="weight_employees" name="weight_employees" min="0" max="1" step="0.01" required class="form-control">
-        </div>
+{% elif data == 'pairwise' %}
+    <!-- Drugi korak: Vnos parnih primerjav -->
+    <form action="{{ url_for('ahp') }}" method="POST">
+        <input type="hidden" name="data" value="pairwise">
+        <input type="hidden" name="selected_companies_json" value='{{ selected_companies|safe }}'>
+
+        <h3>Vnesite vrednosti za parno primerjavo kriterijev</h3>
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Kriterij \ Kriterij</th>
+                    {% for criterion in criteria %}
+                    <th>{{ criterion }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(0, criteria|length) %}
+                <tr>
+                    <th>{{ criteria[i] }}</th>
+                    {% for j in range(0, criteria|length) %}
+                    <td>
+                        {% if j > i %}
+                        <input type="number" name="pairwise_{{ i }}_{{ j }}" step="0.01" min="0.01" required class="form-control">
+                        {% elif j == i %}
+                        1
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         <button type="submit" class="btn btn-primary mt-3">Izračunaj</button>
     </form>
-{% endif %}
 
-<!-- Korak 3: Rezultati WSM analize -->
-{% if data == 'results' %}
-    <h2>Rezultati WSM analize</h2>
+{% elif data == 'results' %}
+    <!-- Tretji korak: Prikaz rezultatov -->
+    <h3>Rezultati AHP analize</h3>
     <table class="table table-striped table-bordered table-hover">
         <thead class="table-dark">
             <tr>
@@ -78,11 +92,11 @@
                 <th>Dobiček</th>
                 <th>Sredstva</th>
                 <th>Zaposleni</th>
-                <th>WSM Ocena</th>
+                <th>AHP Ocena</th>
             </tr>
         </thead>
         <tbody>
-            {% for company in companies %}
+            {% for company in results %}
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>{{ company['podjetje'] }}</td>
@@ -106,5 +120,4 @@
         });
     });
 </script>
-
 {% endblock %}
