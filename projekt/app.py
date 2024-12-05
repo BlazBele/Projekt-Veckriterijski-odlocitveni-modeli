@@ -7,6 +7,7 @@ import os
 import numpy as np
 from dotenv import load_dotenv
 from pyDecision.algorithm import ahp_method
+from pyDecision.algorithm import topsis_method
 
 
 # Nalaganje okolijskih spremenljivk iz .env datoteke
@@ -298,6 +299,7 @@ def ahp():
     data = 'selection'
     results = None
     selected_companies = []
+    error = None  # Inicializiraj napako kot None
 
     if request.method == "POST":
         if request.form.get('data') == 'selection':  # Prvi korak: Izbor podjetij
@@ -353,7 +355,7 @@ def ahp():
                     selected_companies=json.dumps(selected_companies),
                     data='pairwise',
                     criteria=criteria,
-                    error=error
+                    error=error  # Napaka se zdaj prikaže v šabloni
                 )
 
             # Izračun AHP ocen za podjetja
@@ -380,8 +382,10 @@ def ahp():
         data=data,
         selected_companies=json.dumps(selected_companies),
         results=results,
-        criteria=criteria
+        criteria=criteria,
+        error=error  # Posredujemo napako v šablono
     )
+
 
 
 # Vrne seznam izbranih podjetij na podlagi uporabniške izbire.

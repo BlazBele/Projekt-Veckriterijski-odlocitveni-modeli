@@ -5,6 +5,12 @@
 {% block content %}
 <h2 class="mb-4">AHP Analiza</h2>
 
+
+{% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+
 {% if data == 'selection' %}
     <!-- Prvi korak: Izbor podjetij -->
     <form action="{{ url_for('ahp') }}" method="POST">
