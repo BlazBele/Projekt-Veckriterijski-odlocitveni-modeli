@@ -11,7 +11,7 @@ Aplikacija je izdelana z uporabo **Flaska** za spletno aplikacijo in uporablja *
 
 ## Tehnologije
 - **Backend:** Flask
-- **Frontend:** HTML predloge (Jinja2) in Bootstrap za osnovno oblikovanje.
+- **Frontend:** Html, Bootstrap za osnovno oblikovanje.
 - **Podatkovna baza:** MongoDB za shranjevanje in pridobivanje podatkov.
 - **Programski jezik:** Python
 
