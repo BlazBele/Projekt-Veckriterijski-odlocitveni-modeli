@@ -8,9 +8,10 @@ import numpy as np
 from dotenv import load_dotenv
 from pyDecision.algorithm import ahp_method
 from pyDecision.algorithm import topsis_method
+import matplotlib.pyplot as plt
+import io
+import base64
 
-
-# Nalaganje okolijskih spremenljivk iz .env datoteke
 load_dotenv()
 
 app = Flask(__name__)
@@ -68,6 +69,130 @@ def scrape():
     return jsonify({"status": "success", "message": message, "data": data}), 200
 
 
+@app.route("/ahp", methods=["GET", "POST"])
+def ahp():
+    """Stran za metodo AHP in obdelavo rezultatov analize."""
+    # Fetch podatkov za analizo
+    companies = fetch_companies_from_db()
+    criteria = ["prihodek", "dobicek", "sredstva", "zaposleni"]  # Merila za analizo v manjših črkah
+    data = 'selection'
+    results = None
+    selected_companies = []
+    error = None  # Inicializiraj napako kot None
+    graph_url = None  # Inicializiraj URL grafa za prikaz
+    consistency_ratio = None  # Inicializiraj konsistentnost matrike (RC)
+
+    if request.method == "POST":
+        if request.form.get('data') == 'selection':  # Prvi korak: Izbor podjetij
+            selected_ids = request.form.getlist('selected_companies')
+            if not selected_ids:
+                error = "Izberite vsaj eno podjetje."
+                return render_template(
+                    "ahp.html",
+                    companies=companies,
+                    data='selection',
+                    error=error
+                )
+
+            selected_companies = [
+                c for c in companies if c['uvoz'] in selected_ids
+            ]
+            return render_template(
+                "ahp.html",
+                selected_companies=json.dumps(selected_companies),
+                data='pairwise',
+                criteria=criteria
+            )
+
+        elif request.form.get('data') == 'pairwise':  # Drugi korak: Vnos parnih primerjav
+            # Deserialize selected companies
+            selected_companies = json.loads(request.form.get('selected_companies_json', '[]'))
+
+            # Zbiranje matrike parnih primerjav
+            pairwise_data = []
+            for i in range(len(criteria)):
+                row = []
+                for j in range(len(criteria)):
+                    if j > i:
+                        # Vrednosti parne primerjave (zgornja trikotna matrika)
+                        value = float(request.form.get(f'pairwise_{i}_{j}', '1'))
+                        row.append(value)
+                    elif j == i:
+                        row.append(1)  # Diagonalna vrednost je vedno 1
+                    else:
+                        # Inverzna vrednost za spodnjo trikotno matriko
+                        row.append(1 / pairwise_data[j][i])
+                pairwise_data.append(row)
+
+            pairwise_matrix = np.array(pairwise_data)
+
+            # Izračun uteži in konsistentnosti
+            weights, rc = ahp_method(pairwise_matrix, wd='geometric')
+
+            consistency_ratio = round(rc,2)  # Shrani konsistentnost matrike
+            
+            if rc > 0.1:
+                error = "Razmerja so nekonsistentna (RC > 0.1). Poskusite znova."
+                return render_template(
+                    "ahp.html",
+                    selected_companies=json.dumps(selected_companies),
+                    data='pairwise',
+                    criteria=criteria,
+                    error=error  # Napaka se zdaj prikaže v šabloni
+                )
+
+            # Izračun AHP ocen za podjetja
+            for company in selected_companies:
+                # Pretvarjanje vrednosti v številke (opazite, da zdaj dostopamo do majhnih ključev)
+                scores = [
+                    float(company[crit].replace('$', '').replace(',', ''))  # Uporabimo male črke za ključe
+                    for crit in criteria
+                ]
+                # Utežena vsota
+                company['score'] = round(sum(w * s for w, s in zip(weights, scores)), 1)
+
+            # Razvrstitev rezultatov po AHP oceni
+            results = sorted(
+                selected_companies,
+                key=lambda x: x['score'],
+                reverse=True
+            )
+            data = 'results'
+
+            # Generiranje grafa za razvrstitev podjetij
+            plt.figure(figsize=(10, 6))
+            company_names = [c['podjetje'] for c in results]
+            scores = [c['score'] for c in results]
+            plt.barh(company_names, scores, color='orange')
+            plt.title('Razvrstitev podjetij (AHP)')
+            plt.xlabel('AHP Ocena')
+            plt.ylabel('Podjetja')
+            plt.gca().invert_yaxis()
+
+            # Pretvorba grafa v Base64 string
+            img = io.BytesIO()
+            plt.tight_layout()
+            plt.savefig(img, format='png', bbox_inches='tight')
+            img.seek(0)
+            graph_url = base64.b64encode(img.getvalue()).decode()
+            plt.close()
+
+    return render_template(
+        "ahp.html",
+        companies=companies,
+        data=data,
+        selected_companies=json.dumps(selected_companies),
+        results=results,
+        criteria=criteria,
+        error=error,  # Posredujemo napako v šablono
+        graph_url=graph_url,  # Posredujemo graf za prikaz
+        consistency_ratio=consistency_ratio  # Posredujemo konsistentnost matrike (RC)
+    )
+
+
+
+
+
 @app.route("/wsm", methods=["GET", "POST"])
 def wsm():
     """Stran za metodo WSM in obdelavo rezultatov analize."""
@@ -75,6 +200,7 @@ def wsm():
     data = 'selection'  # Določa korak (selection, weights, results)
     results = None
     selected_companies = []
+    graph_url = None  #
 
     if request.method == "POST":
         if request.form.get('data') == 'selection':  # Prvi korak: Izbira podjetij
@@ -115,68 +241,96 @@ def wsm():
             results = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
             data = 'results'
 
-    return render_template("wsm.html", companies=companies, data=data, selected_companies=json.dumps(selected_companies), results=results)
+            # Generiranje grafa
+            plt.figure(figsize=(10, 6))
+            company_names = [c['podjetje'] for c in results]
+            scores = [c['score'] for c in results]
+            plt.barh(company_names, scores, color='skyblue')
+            plt.xlabel('WSM Ocena')
+            plt.ylabel('Podjetje')
+            plt.title('WSM Rezultati')
+            plt.gca().invert_yaxis()
+
+            # Pretvori graf v Base64 string
+            img = io.BytesIO()
+            plt.savefig(img, format='png', bbox_inches='tight')
+            img.seek(0)
+            graph_url = base64.b64encode(img.getvalue()).decode()
+            plt.close()
+
+    return render_template("wsm.html", companies=companies, data=data, selected_companies=json.dumps(selected_companies), results=results, graph_url=graph_url)
+
+
 
 @app.route('/topsis', methods=['GET', 'POST'])
 def topsis():
-
     companies = fetch_companies_from_db()
     data = 'selection'  # Določa korak (selection, weights, results)
     results = None
     selected_companies = []
+    graph_url = None  # Inicializacija za graf
 
     if request.method == 'POST':
-        # Get the selected companies and weights
         data = request.form.get('data')
         if data == 'selection':
-            # Get selected companies from the form
+            # Izbor podjetij
             selected_companies_ids = request.form.getlist('selected_companies')
             selected_companies = [company for company in companies if str(company['uvoz']) in selected_companies_ids]
             return render_template('topsis.html', data='weights', companies=companies, selected_companies=json.dumps(selected_companies))
 
         elif data == 'weights':
-            # Get the weights from the form
+            # Pridobivanje uteži
             weight_income = float(request.form['weight_income'])
             weight_profit = float(request.form['weight_profit'])
             weight_assets = float(request.form['weight_assets'])
             weight_employees = float(request.form['weight_employees'])
 
-            # Get the selected companies
+            # Izbor podjetij
             selected_companies_json = request.form['selected_companies_json']
             selected_companies = json.loads(selected_companies_json)
 
-            # Prepare the dataset for TOPSIS (converting the selected companies to numerical values)
+            # Priprava podatkov za TOPSIS
             dataset = []
             for company in selected_companies:
-                # Clean and convert financial values to float
                 income = float(company['prihodek'].replace('$', '').replace(',', ''))
                 profit = float(company['dobicek'].replace('$', '').replace(',', ''))
                 assets = float(company['sredstva'].replace('$', '').replace(',', ''))
-                employees = float(company['zaposleni'].replace(',', ''))  # Only remove commas for employee count
-
-                # Append cleaned data to dataset
+                employees = float(company['zaposleni'].replace(',', ''))
                 dataset.append([income, profit, assets, employees])
 
-            # Weights and Criterion Types
             weights = [weight_income, weight_profit, weight_assets, weight_employees]
-            criterion_type = ['max', 'max', 'max', 'max']  # Assuming 'max' for all criteria
+            criterion_type = ['max', 'max', 'max', 'max']  # Privzeto "max" za vse kriterije
 
-            # Call the TOPSIS method
+            # Klic TOPSIS metode
             dataset_np = np.array(dataset)
             relative_closeness = topsis_method(dataset_np, weights, criterion_type, graph=False, verbose=False)
 
-            # Prepare the results with scores and assign the score to each company
+            # Priprava rezultatov
             for i, company in enumerate(selected_companies):
-                company['score'] = round(relative_closeness[i], 2)  # Round the score to 1 decimal place
+                company['score'] = round(relative_closeness[i], 2)
 
-            # Sort companies by their score in descending order (highest to lowest score)
-            selected_companies_sorted = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
+            results = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
+            data = 'results'
 
-            # Render the sorted results on the results page
-            return render_template('topsis.html', data='results', results=selected_companies_sorted)
+            # Generiranje grafa
+            plt.figure(figsize=(10, 6))
+            company_names = [c['podjetje'] for c in results]
+            scores = [c['score'] for c in results]
+            plt.barh(company_names, scores, color='lime')
+            plt.xlabel('TOPSIS Ocena')
+            plt.ylabel('Podjetje')
+            plt.title('TOPSIS Rezultati')
+            plt.gca().invert_yaxis()
 
-    # If GET request, show the company selection form
-    return render_template('topsis.html', data='selection', companies=companies)
+            # Pretvorba grafa v Base64 string
+            img = io.BytesIO()
+            plt.savefig(img, format='png', bbox_inches='tight')
+            img.seek(0)
+            graph_url = base64.b64encode(img.getvalue()).decode()
+            plt.close()
+
+    return render_template('topsis.html', data=data, companies=companies, results=results, graph_url=graph_url)
+
 
 
 @app.route("/promethee", methods=["GET", "POST"])
@@ -186,6 +340,7 @@ def promethee():
     data = 'selection'  # Določa korak (selection, weights, results)
     results = None
     selected_companies = []
+    graph_url = None  # Inicializacija za graf
 
     if request.method == "POST":
         if request.form.get('data') == 'selection':  # Prvi korak: Izbira podjetij
@@ -220,7 +375,6 @@ def promethee():
             weights = [weight_income, weight_profit, weight_assets, weight_employees]
 
             # Izračun PROMETHEE rezultatov
-            # Ocenjevanje z metodo PROMETHEE
             positive_flows, negative_flows = promethee_method(preferences, weights)
 
             # Združevanje rezultatov
@@ -233,7 +387,25 @@ def promethee():
             results = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
             data = 'results'
 
-    return render_template("promethee.html", companies=companies, data=data, selected_companies=json.dumps(selected_companies), results=results)
+            # Generiranje grafa
+            plt.figure(figsize=(10, 6))
+            company_names = [c['podjetje'] for c in results]
+            scores = [c['score'] for c in results]
+            plt.barh(company_names, scores, color='lightgreen')
+            plt.xlabel('PROMETHEE Ocena')
+            plt.ylabel('Podjetje')
+            plt.title('PROMETHEE Rezultati')
+            plt.gca().invert_yaxis()
+
+            # Pretvorba grafa v Base64 string
+            img = io.BytesIO()
+            plt.savefig(img, format='png', bbox_inches='tight')
+            img.seek(0)
+            graph_url = base64.b64encode(img.getvalue()).decode()
+            plt.close()
+
+    return render_template("promethee.html", companies=companies, data=data, selected_companies=json.dumps(selected_companies), results=results, graph_url=graph_url)
+
 
 
 def promethee_method(preferences, weights):
@@ -289,111 +461,12 @@ def load_data():
         return json.load(f)
 
 
-
-@app.route("/ahp", methods=["GET", "POST"])
-def ahp():
-    """Stran za metodo AHP in obdelavo rezultatov analize."""
-    # Fetch podatkov za analizo
-    companies = fetch_companies_from_db()
-    criteria = ["prihodek", "dobicek", "sredstva", "zaposleni"]  # Merila za analizo v manjših črkah
-    data = 'selection'
-    results = None
-    selected_companies = []
-    error = None  # Inicializiraj napako kot None
-
-    if request.method == "POST":
-        if request.form.get('data') == 'selection':  # Prvi korak: Izbor podjetij
-            selected_ids = request.form.getlist('selected_companies')
-            if not selected_ids:
-                error = "Izberite vsaj eno podjetje."
-                return render_template(
-                    "ahp.html",
-                    companies=companies,
-                    data='selection',
-                    error=error
-                )
-
-            selected_companies = [
-                c for c in companies if c['uvoz'] in selected_ids
-            ]
-            return render_template(
-                "ahp.html",
-                selected_companies=json.dumps(selected_companies),
-                data='pairwise',
-                criteria=criteria
-            )
-
-        elif request.form.get('data') == 'pairwise':  # Drugi korak: Vnos parnih primerjav
-            # Deserialize selected companies
-            selected_companies = json.loads(request.form.get('selected_companies_json', '[]'))
-
-            # Zbiranje matrike parnih primerjav
-            pairwise_data = []
-            for i in range(len(criteria)):
-                row = []
-                for j in range(len(criteria)):
-                    if j > i:
-                        # Vrednosti parne primerjave (zgornja trikotna matrika)
-                        value = float(request.form.get(f'pairwise_{i}_{j}', '1'))
-                        row.append(value)
-                    elif j == i:
-                        row.append(1)  # Diagonalna vrednost je vedno 1
-                    else:
-                        # Inverzna vrednost za spodnjo trikotno matriko
-                        row.append(1 / pairwise_data[j][i])
-                pairwise_data.append(row)
-
-            pairwise_matrix = np.array(pairwise_data)
-
-            # Izračun uteži in konsistentnosti
-            weights, rc = ahp_method(pairwise_matrix, wd='geometric')
-
-            if rc > 0.1:
-                error = "Razmerja so nekonsistentna (RC > 0.1). Poskusite znova."
-                return render_template(
-                    "ahp.html",
-                    selected_companies=json.dumps(selected_companies),
-                    data='pairwise',
-                    criteria=criteria,
-                    error=error  # Napaka se zdaj prikaže v šabloni
-                )
-
-            # Izračun AHP ocen za podjetja
-            for company in selected_companies:
-                # Pretvarjanje vrednosti v številke (opazite, da zdaj dostopamo do majhnih ključev)
-                scores = [
-                    float(company[crit].replace('$', '').replace(',', ''))  # Uporabimo male črke za ključe
-                    for crit in criteria
-                ]
-                # Utežena vsota
-                company['score'] = round(sum(w * s for w, s in zip(weights, scores)), 1)
-
-            # Razvrstitev rezultatov po AHP oceni
-            results = sorted(
-                selected_companies,
-                key=lambda x: x['score'],
-                reverse=True
-            )
-            data = 'results'
-
-    return render_template(
-        "ahp.html",
-        companies=companies,
-        data=data,
-        selected_companies=json.dumps(selected_companies),
-        results=results,
-        criteria=criteria,
-        error=error  # Posredujemo napako v šablono
-    )
-
-
-
-# Vrne seznam izbranih podjetij na podlagi uporabniške izbire.
+#Vrne seznam izbranih podjetij na podlagi uporabniške izbire.
 def get_selected_companies(companies):
     selected_ids = request.form.getlist('selected_companies')
     return [c for c in companies if c['uvoz'] in selected_ids]
 
-# Prebere in ustvari matriko parnih primerjav iz obrazca.
+#Prebere in ustvari matriko parnih primerjav iz obrazca.
 def get_pairwise_matrix(request):
     num_criteria = 4
     pairwise_data = []
@@ -412,13 +485,13 @@ def get_pairwise_matrix(request):
     
     return np.array(pairwise_data)
 
-# Izračuna uteži na podlagi matrike parnih primerjav.
+#Izračuna uteži na podlagi matrike parnih primerjav.
 def calculate_weights(pairwise_matrix):
     column_sum = pairwise_matrix.sum(axis=0)
     normalized_matrix = pairwise_matrix / column_sum
     return normalized_matrix.mean(axis=1)
 
-# Ustvari matriko odločanja iz izbranih podjetij.
+#Ustvari matriko odločanja iz izbranih podjetij.
 def get_decision_matrix(companies):
     decision_matrix = []
     for company in companies:
@@ -430,15 +503,15 @@ def get_decision_matrix(companies):
         ])
     return np.array(decision_matrix)
 
-# Normalizira matriko odločanja.
+#Normalizira matriko odločanja.
 def normalize_decision_matrix(decision_matrix):
     return decision_matrix / decision_matrix.sum(axis=0)
 
-# Izračuna končne rezultate na podlagi normalizirane matrike in uteži.
+#Izračuna končne rezultate na podlagi normalizirane matrike in uteži.
 def calculate_scores(norm_matrix, weights):
     return norm_matrix @ weights
 
-# Razvrsti podjetja na podlagi njihovih rezultatov.
+#Razvrsti podjetja na podlagi njihovih rezultatov.
 def sort_companies_by_score(companies, scores):
     for i, company in enumerate(companies):
         company['score'] = scores[i]

@@ -46,6 +46,7 @@
             <div class="alert alert-danger">{{ error }}</div>
         {% endif %}
         <button type="submit" class="btn btn-primary mt-3">Naprej</button>
+        <p></p>
     </form>
 
 {% elif data == 'pairwise' %}
@@ -84,6 +85,8 @@
             </tbody>
         </table>
         <button type="submit" class="btn btn-primary mt-3">Izračunaj</button>
+        <br>
+        <p></p>
     </form>
 
 {% elif data == 'results' %}
@@ -115,6 +118,15 @@
             {% endfor %}
         </tbody>
     </table>
+    <div>
+        <h3>Konsistentnost matrike</h3>
+        <p><strong>Razmerje konsistentnosti (RC):</strong> {{ consistency_ratio }}</p>
+    </div>
+    <div>
+        <h3>Vizualizacija rezultatov</h3>
+        <img src="data:image/png;base64,{{ graph_url }}" alt="AHP Rezultati in Uteži">
+    </div>
+
 {% endif %}
 
 <script>
