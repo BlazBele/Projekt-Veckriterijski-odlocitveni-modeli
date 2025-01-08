@@ -54,7 +54,7 @@ mvop/
 
 1. Klonirajte repozitorij:
    ```bash
-   git clone https://github.com/BlazBele/Projekt-Veckriterijski-odlocitveni-modeli.git
+   git clone https://github.com/BlazBele/Projekt-Veckriterijski-odlocitveni-procesov.git
    ```
 2. Premaknite se v mapo projekta:
    ```bash
