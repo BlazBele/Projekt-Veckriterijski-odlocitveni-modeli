@@ -1,16 +1,18 @@
 from bson import ObjectId
 from flask import Flask, render_template, request, jsonify, session
+from scipy import linalg
 from scraping import scrapeData
 from pymongo import MongoClient
 import json
 import os
 import numpy as np
 from dotenv import load_dotenv
-from pyDecision.algorithm import ahp_method
+from numpy import amax, array, transpose, real
 from pyDecision.algorithm import topsis_method
 import matplotlib.pyplot as plt
 import io
 import base64
+import scipy.sparse.linalg as sc
 
 load_dotenv()
 
@@ -73,18 +75,16 @@ def scrape():
 def ahp():
     """Stran za metodo AHP in obdelavo rezultatov analize."""
     # Fetch podatkov za analizo
-    companies = fetch_companies_from_db()
-    criteria = ["prihodek", "dobicek", "sredstva", "zaposleni"]  # Merila za analizo v manjših črkah
+    companies = fetch_companies_from_db()  # Pridobitev podatkov iz baze
+    criteria = ["prihodek", "dobicek", "sredstva", "zaposleni"]  # Merila za analizo
     data = 'selection'
-    results = None
-    selected_companies = []
-    error = None  # Inicializiraj napako kot None
-    graph_url = None  # Inicializiraj URL grafa za prikaz
-    consistency_ratio = None  # Inicializiraj konsistentnost matrike (RC)
+    results = []
 
+    # Ko uporabnik izbere podjetja za analizo
     if request.method == "POST":
         if request.form.get('data') == 'selection':  # Prvi korak: Izbor podjetij
             selected_ids = request.form.getlist('selected_companies')
+
             if not selected_ids:
                 error = "Izberite vsaj eno podjetje."
                 return render_template(
@@ -94,102 +94,271 @@ def ahp():
                     error=error
                 )
 
-            selected_companies = [
-                c for c in companies if c['uvoz'] in selected_ids
-            ]
+            selected_companies = [c for c in companies if c['uvoz'] in selected_ids]
+            
+            # Shrani izbrane podjetje v sejo
+            session['selected_companies'] = selected_companies
+        
             return render_template(
                 "ahp.html",
-                selected_companies=json.dumps(selected_companies),
+                selected_companies=selected_companies,
                 data='pairwise',
                 criteria=criteria
             )
+        
+        if request.form.get('data') == 'pairwise':  # Drugi korak: Vnos parnih primerjav
+            pairwise_criteria = []       
 
-        elif request.form.get('data') == 'pairwise':  # Drugi korak: Vnos parnih primerjav
-            # Deserialize selected companies
-            selected_companies = json.loads(request.form.get('selected_companies_json', '[]'))
+            # Prenesi izbrane podjetja iz seje
+            selected_companies = session.get('selected_companies', [])
 
-            # Zbiranje matrike parnih primerjav
-            pairwise_data = []
-            for i in range(len(criteria)):
-                row = []
-                for j in range(len(criteria)):
-                    if j > i:
-                        # Vrednosti parne primerjave (zgornja trikotna matrika)
-                        value = float(request.form.get(f'pairwise_{i}_{j}', '1'))
-                        row.append(value)
-                    elif j == i:
-                        row.append(1)  # Diagonalna vrednost je vedno 1
-                    else:
-                        # Inverzna vrednost za spodnjo trikotno matriko
-                        row.append(1 / pairwise_data[j][i])
-                pairwise_data.append(row)
-
-            pairwise_matrix = np.array(pairwise_data)
-
-            # Izračun uteži in konsistentnosti
-            weights, rc = ahp_method(pairwise_matrix, wd='geometric')
-
-            consistency_ratio = round(rc,2)  # Shrani konsistentnost matrike
-            
-            if rc > 0.1:
-                error = "Razmerja so nekonsistentna (RC > 0.1). Poskusite znova."
+            # Če ni podjetij, jih preusmeri nazaj na prvi korak
+            if not selected_companies:
+                error = "Izberite podjetja pred nadaljevanjem."
                 return render_template(
                     "ahp.html",
-                    selected_companies=json.dumps(selected_companies),
-                    data='pairwise',
-                    criteria=criteria,
-                    error=error  # Napaka se zdaj prikaže v šabloni
+                    companies=companies,
+                    data='selection',
+                    error=error
                 )
 
-            # Izračun AHP ocen za podjetja
-            for company in selected_companies:
-                # Pretvarjanje vrednosti v številke (opazite, da zdaj dostopamo do majhnih ključev)
-                scores = [
-                    float(company[crit].replace('$', '').replace(',', ''))  # Uporabimo male črke za ključe
-                    for crit in criteria
-                ]
-                # Utežena vsota
-                company['score'] = round(sum(w * s for w, s in zip(weights, scores)), 1)
+            # Zbiranje parnih primerjav za kriterije
+            for i in range(len(criteria)):
+                for j in range(i + 1, len(criteria)):
+                    pairwise_criteria.append(float(request.form[f'pairwise_{i}_{j}']))
 
-            # Razvrstitev rezultatov po AHP oceni
-            results = sorted(
-                selected_companies,
-                key=lambda x: x['score'],
-                reverse=True
+            # Zbiranje parnih primerjav za vsak kriterij
+            pairwise_prihodek = []
+            pairwise_dobicek = []
+            pairwise_sredstva = []
+            pairwise_zaposleni = []
+
+            # Dopolnitev celotne matrike (dodajanje obratnih vrednosti)
+            def fill_full_matrix(upper_triangle, n):
+                matrix = np.eye(n)  # Začetna matrika z enicami na diagonali
+                index = 0
+                for i in range(n):
+                    for j in range(i + 1, n):
+                        if index < len(upper_triangle):
+                            matrix[i][j] = upper_triangle[index]
+                            matrix[j][i] = 1 / matrix[i][j]  # Dopolni spodnji del matrike z obratnimi vrednostmi
+                            index += 1
+                return matrix
+            
+            # Zbiranje zgornjega desnega trikotnika
+            for i in range(len(selected_companies)):
+                for j in range(i + 1, len(selected_companies)):
+                    # Zberemo vrednosti za posamezen kriterij
+                    prihodek = request.form.get(f'pairwise_prihodek_{i}_{j}')
+                    dobiček = request.form.get(f'pairwise_dobicek_{i}_{j}')
+                    sredstva = request.form.get(f'pairwise_sredstva_{i}_{j}')
+                    zaposleni = request.form.get(f'pairwise_zaposleni_{i}_{j}')
+
+                    pairwise_prihodek.append(float(prihodek))
+                    pairwise_dobicek.append(float(dobiček))
+                    pairwise_sredstva.append(float(sredstva))
+                    pairwise_zaposleni.append(float(zaposleni))
+
+            # Dimenzije matrik (število podjetij)
+            n_companies = len(selected_companies)
+
+            # Izračun celotnih matrik za vse kriterije
+            full_prihodek_matrix  = (fill_full_matrix(pairwise_prihodek, n_companies))
+            full_dobicek_matrix = (fill_full_matrix(pairwise_dobicek, n_companies))
+            full_sredstva_matrix = (fill_full_matrix(pairwise_sredstva, n_companies))
+            full_zaposleni_matrix = (fill_full_matrix(pairwise_zaposleni, n_companies))
+
+            reshaped_full_prihodek_matrix = np.array(full_prihodek_matrix.reshape(n_companies, n_companies))
+            reshaped_full_dobicek_matrix = np.array(full_dobicek_matrix.reshape(n_companies, n_companies))
+            reshaped_sredstva_matrix = np.array(full_sredstva_matrix.reshape(n_companies, n_companies))
+            reshaped_zaposleni_matrix = np.array(full_zaposleni_matrix.reshape(n_companies, n_companies))
+
+            stacked_matrices = np.vstack((
+                reshaped_full_prihodek_matrix,
+                reshaped_full_dobicek_matrix,
+                reshaped_sredstva_matrix,
+                reshaped_zaposleni_matrix
+            ))
+
+            
+
+            # Dopolni matriko s podatki iz zgornjega trikotnika
+            full_PCM = fill_full_matrix(pairwise_criteria, len(criteria))
+
+            
+
+
+            # Izračun prioritetnih vektorjev z metodo AHP
+            steviloAlternativ = len(selected_companies)  # Število kriterijev
+            steviloKriterijev = len(criteria)  # Število podjetij
+
+            RI_table = {
+                1: 0.0,  # If there is only one criterion, there is no inconsistency
+                2: 0.0,  # If there are two criteria, no inconsistency
+                3: 0.58,
+                4: 0.9,
+                5: 1.12,
+                6: 1.24,
+                7: 1.32,
+                8: 1.41,
+                9: 1.45,
+                10: 1.49
+
+            }
+    
+
+            # Tukaj bi bil tvoj AHP algoritem
+            results = ahpCalc(stacked_matrices, full_PCM, steviloAlternativ, steviloKriterijev, c=1)
+
+            RI = RI_table.get(steviloKriterijev, 1.12)
+    
+
+            # Add the results to the selected companies
+            for i, company in enumerate(selected_companies):
+                company['score'] = round(results[i],2)  # Add the corresponding score to each company
+
+            # Sort companies by the AHP score in descending order
+            sorted_companies = sorted(selected_companies, key=lambda x: x['score'], reverse=True)
+            
+            '''
+            print("Debug:")
+            print("Število alternativ", steviloAlternativ)
+            print()
+            print("Število kriterijev", steviloKriterijev)
+            print()
+            print(stacked_matrices)
+            print()
+            print(full_PCM)
+            print()
+            print(results)
+            print()
+            
+            '''
+
+
+            lambdamax = amax(linalg.eigvals(full_PCM).real)
+            CI = (lambdamax - steviloKriterijev) / (steviloKriterijev - 1)
+            CR = round((CI / RI),3)
+            
+            if abs(CR) < 1e-10:
+                CR = 0.0
+            print("Inconsistency index of the criteria: ", CR)
+            if CR > 0.1:
+                print("The pairwise comparison matrix of the"
+                    " criteria is inconsistent")
+                
+            graph_url = generate_graph(results, selected_companies)
+
+
+            return render_template(
+                "ahp.html",
+                data='results',
+                selected_companies=sorted_companies,
+                consistency_ratios=CR,
+                graph_url=graph_url
             )
-            data = 'results'
-
-            # Generiranje grafa za razvrstitev podjetij
-            plt.figure(figsize=(10, 6))
-            company_names = [c['podjetje'] for c in results]
-            scores = [c['score'] for c in results]
-            plt.barh(company_names, scores, color='orange')
-            plt.title('Razvrstitev podjetij (AHP)')
-            plt.xlabel('AHP Ocena')
-            plt.ylabel('Podjetja')
-            plt.gca().invert_yaxis()
-
-            # Pretvorba grafa v Base64 string
-            img = io.BytesIO()
-            plt.tight_layout()
-            plt.savefig(img, format='png', bbox_inches='tight')
-            img.seek(0)
-            graph_url = base64.b64encode(img.getvalue()).decode()
-            plt.close()
-
-    return render_template(
-        "ahp.html",
-        companies=companies,
-        data=data,
-        selected_companies=json.dumps(selected_companies),
-        results=results,
-        criteria=criteria,
-        error=error,  # Posredujemo napako v šablono
-        graph_url=graph_url,  # Posredujemo graf za prikaz
-        consistency_ratio=consistency_ratio  # Posredujemo konsistentnost matrike (RC)
-    )
 
 
+    return render_template("ahp.html", companies=companies, data=data)
+
+
+def generate_graph(results, companies):
+    # Generate a bar chart for the results
+    company_names = [company['podjetje'] for company in companies]
+    
+    fig, ax = plt.subplots()
+    ax.bar(company_names, results, color='skyblue')
+    ax.set_xlabel('Podjetja')
+    ax.set_ylabel('AHP Ocena')
+    ax.set_title('AHP Ocene podjetij')
+
+    # Convert the plot to a PNG image and encode it in base64
+    img_stream = io.BytesIO()
+    plt.savefig(img_stream, format='png')
+    img_stream.seek(0)
+    graph_url = base64.b64encode(img_stream.getvalue()).decode('utf-8')
+
+    plt.close(fig)  # Close the figure to free up memory
+    return graph_url
+
+
+def convert_to_numeric(value):
+    """Pretvori vrednosti, ki so v obliki besedila z simboli, v številske vrednosti."""
+    value = value.replace(',', '')  # Odstrani vejice
+    value = value.replace('$', '')  # Odstrani znak za dolar
+    try:
+        return float(value)  # Pretvori v float
+    except ValueError:
+        return 0  # Če ni mogoče pretvoriti, vrni 0
+
+def norm(x):
+    """ x is the pairwise comparison matrix for the 
+    criteria or the alternatives
+    """
+    k = array(sum(x, 0))
+    z = array([[round(x[i, j] / k[j], 3) 
+        for j in range(x.shape[1])]
+        for i in range(x.shape[0])])
+    return z
+
+# geometric mean method
+def geomean(x):
+    """ x is the pairwise comparison matrix for the
+    criteria or the alternatives
+    """
+    z = [1] * x.shape[0]
+    for i in range(x.shape[0]):
+        for j in range(x.shape[1]):
+            z[i] = z[i] * x[i][j]
+        z[i] = pow(z[i], (1 / x.shape[0]))
+    return z
+
+# AHP method: it calls the other functions
+def ahpCalc(PCM, PCcriteria, m, n, c):
+    """ PCM is the pairwise comparison matrix for the
+    alternatives,  PCcriteria is the pairwise comparison 
+    matrix for the criteria, m is the number of the 
+    alternatives, n is the number of the criteria, and 
+    c is the method to estimate a priority vector (1 for 
+    eigenvector, 2 for normalized column sum, and 3 for
+    geometric mean)
+    """
+    # calculate the priority vector of criteria
+    if c == 1: # eigenvector
+        val, vec = sc.eigs(PCcriteria, k = 1, which = 'LM')
+        eigcriteria = real(vec)
+        w = eigcriteria / sum(eigcriteria)
+        w = array(w).ravel()
+    elif c == 2: # normalized column sum
+        normPCcriteria = norm(PCcriteria)
+        w = array(sum(normPCcriteria, 1) / n)
+    else: # geometric mean
+        GMcriteria = geomean(PCcriteria)
+        w = GMcriteria / sum(GMcriteria)
+    # calculate the local priority vectors for the 
+    # alternatives
+    S = []
+    for i in range(n):
+        if c == 1: # eigenvector
+            val, vec = sc.eigs(PCM[i * m:i * m + m, 0:m],
+                k = 1, which = 'LM')
+            eigalter = real(vec)
+            s = eigalter / sum(eigalter)
+            s = array(s).ravel()
+        elif c == 2: # normalized column sum
+            normPCM = norm(PCM[i*m:i*m+m,0:m])
+            s = array(sum(normPCM, 1) / m)
+        else: # geometric mean
+            GMalternatives = geomean(PCM[i*m:i*m+m,0:m])
+            s = GMalternatives / sum(GMalternatives)
+        S.append(s)
+    S = transpose(S)
+
+    # calculate the global priority vector for the
+    # alternatives
+    v = S.dot(w.T)
+
+    return v
 
 
 

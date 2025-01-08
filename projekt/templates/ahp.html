@@ -5,11 +5,9 @@
 {% block content %}
 <h2 class="mb-4">AHP Analiza</h2>
 
-
 {% if error %}
     <div class="alert alert-danger">{{ error }}</div>
 {% endif %}
-
 
 {% if data == 'selection' %}
     <!-- Prvi korak: Izbor podjetij -->
@@ -42,9 +40,6 @@
                 {% endfor %}
             </tbody>
         </table>
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
         <button type="submit" class="btn btn-primary mt-3">Naprej</button>
         <p></p>
     </form>
@@ -84,12 +79,136 @@
                 {% endfor %}
             </tbody>
         </table>
+        <br>
+        <br>
+        <!-- Dodajanje parnih primerjav za vsako podjetje glede na kriterij -->
+        <h3>Vnesite vrednosti za parno primerjavo alternativ</h3>
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Prihodek</th>
+                    {% for company in selected_companies %}
+                    <th>{{ company['podjetje'] }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(0, selected_companies|length) %}
+                <tr>
+                    <th>{{ selected_companies[i]['podjetje'] }}</th>
+                    {% for j in range(0, selected_companies|length) %}
+                    <td>
+                        {% if j > i %}
+                        <input type="number" name="pairwise_prihodek_{{ i }}_{{ j }}" step="0.01" min="0.01" required class="form-control">
+                        {% elif j == i %}
+                        1
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Dobiček</th>
+                    {% for company in selected_companies %}
+                    <th>{{ company['podjetje'] }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(0, selected_companies|length) %}
+                <tr>
+                    <th>{{ selected_companies[i]['podjetje'] }}</th>
+                    {% for j in range(0, selected_companies|length) %}
+                    <td>
+                        {% if j > i %}
+                        <input type="number" name="pairwise_dobicek_{{ i }}_{{ j }}" step="0.01" min="0.01" required class="form-control">
+                        {% elif j == i %}
+                        1
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Sredstva</th>
+                    {% for company in selected_companies %}
+                    <th>{{ company['podjetje'] }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(0, selected_companies|length) %}
+                <tr>
+                    <th>{{ selected_companies[i]['podjetje'] }}</th>
+                    {% for j in range(0, selected_companies|length) %}
+                    <td>
+                        {% if j > i %}
+                        <input type="number" name="pairwise_sredstva_{{ i }}_{{ j }}" step="0.01" min="0.01" required class="form-control">
+                        {% elif j == i %}
+                        1
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <br>
+
+        <table class="table table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>št. Zapos.</th>
+                    {% for company in selected_companies %}
+                    <th>{{ company['podjetje'] }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(0, selected_companies|length) %}
+                <tr>
+                    <th>{{ selected_companies[i]['podjetje'] }}</th>
+                    {% for j in range(0, selected_companies|length) %}
+                    <td>
+                        {% if j > i %}
+                        <input type="number" name="pairwise_zaposleni_{{ i }}_{{ j }}" step="0.01" min="0.01" required class="form-control">
+                        {% elif j == i %}
+                        1
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+
         <button type="submit" class="btn btn-primary mt-3">Izračunaj</button>
         <br>
         <p></p>
     </form>
 
-{% elif data == 'results' %}
+    {% elif data == 'results' %}
     <!-- Tretji korak: Prikaz rezultatov -->
     <h3>Rezultati AHP analize</h3>
     <table class="table table-striped table-bordered table-hover">
@@ -105,7 +224,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for company in results %}
+            {% for company in selected_companies %}
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>{{ company['podjetje'] }}</td>
@@ -118,16 +237,25 @@
             {% endfor %}
         </tbody>
     </table>
+    <!-- Konsistentnost matrike -->
     <div>
         <h3>Konsistentnost matrike</h3>
-        <p><strong>Razmerje konsistentnosti (RC):</strong> {{ consistency_ratio }}</p>
+        <p>
+            <strong>Razmerje konsistentnosti Kriterijev (RC):</strong>
+            <span style="color: {% if consistency_ratios > 0.1 %}red{% else %}green{% endif %};">
+                {{ consistency_ratios }}
+            </span>
+        </p>
     </div>
+
+    <!-- Vizualizacija rezultatov -->
     <div>
         <h3>Vizualizacija rezultatov</h3>
         <img src="data:image/png;base64,{{ graph_url }}" alt="AHP Rezultati in Uteži">
     </div>
 
 {% endif %}
+
 
 <script>
     // JavaScript za "Select All"
